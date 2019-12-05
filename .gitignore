@@ -1,2 +1,4 @@
 tpa.ini
 venv/
+*.pyc
+__pycache__
