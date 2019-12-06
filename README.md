@@ -13,4 +13,8 @@ irc://irc.chat.twitch.tv:6697
 ```
 
 #### Bot Docs
+guide:
 https://dev.twitch.tv/docs/irc/guide/#join
+
+reference:
+https://dev.twitch.tv/docs/irc
