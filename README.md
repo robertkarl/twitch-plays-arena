@@ -5,6 +5,10 @@
 Generate an oath token here:
 
 https://twitchapps.com/tmi/
+```
+cp tpa-sample.ini tpa.ini
+vim tpa-sample.ini # Add your oath token
+```
 
 #### 
 Twitch operates at:
@@ -18,3 +22,4 @@ https://dev.twitch.tv/docs/irc/guide/#join
 
 reference:
 https://dev.twitch.tv/docs/irc
+
