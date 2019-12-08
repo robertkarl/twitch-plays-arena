@@ -38,6 +38,10 @@ class ArenaVoteCounter:
         return sum(self._votes.values()) >= self.QUORUM_SIZE
 
 
+HELP_MESSAGE = "Commands: p=priority, x=execute, #1-9=play card 1-9, a=all attack, >>=pass, h=help "
+"c=accept, k=cancel"
+
+
 class TpaEventHandler:
     """
     Our event handler.
@@ -70,10 +74,7 @@ class TpaEventHandler:
             print("requesting permissions")
             self.server.cap("LS")
             self.server.cap(
-                "REQ",
-                "twitch.tv/commands",
-                "twitch.tv/tags",
-                "twitch.tv/membership",
+                "REQ", "twitch.tv/commands", "twitch.tv/tags", "twitch.tv/membership",
             )
             self.server.cap("END")
             self._has_requested_perms = True
@@ -94,21 +95,16 @@ class TpaEventHandler:
         self.on_chat_command(event.arguments[0])
 
     def on_chat_command(self, msg):
-        print("received message {}".format(msg))
         if msg == "p":
             self._votes = ArenaVoteCounter()
-            self.server.privmsg(self._channel_name, "")
+            self.server.privmsg(
+                self._channel_name, "We have priority. {}".format(HELP_MESSAGE)
+            )
             # Start a timer to count the votes.
             return
 
         if msg == "h":
-            self.server.privmsg(
-                self._channel_name,
-                (
-                    "Commands: p=priority, x=execute, #1-9=play card 1-9, a=all attack, >>=pass, h=help "
-                    "c=accept, k=cancel"
-                ),
-            )
+            self.server.privmsg(self._channel_name, HELP_MESSAGE)
             return
 
         if getattr(self, "_votes", None) is None:
@@ -140,8 +136,7 @@ class TpaEventHandler:
         print(action)
         action_name, action_count = action
         self.server.privmsg(
-            self._channel_name,
-            "{} with {} votes".format(action_name, action_count),
+            self._channel_name, "{} with {} votes".format(action_name, action_count),
         )
         self._votes = None
 

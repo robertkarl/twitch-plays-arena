@@ -15,6 +15,7 @@ def captured_output():
     finally:
         sys.stdout, sys.stderr = old_out, old_err
 
+
 class TPAVoteTest(unittest.TestCase):
     def setUp(self):
         self.avc = tpa.ArenaVoteCounter()
@@ -35,5 +36,6 @@ class TPAVoteTest(unittest.TestCase):
         out = out.getvalue().strip()
         self.assertEqual(out, "received message !execute\n('card1', 2)")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
