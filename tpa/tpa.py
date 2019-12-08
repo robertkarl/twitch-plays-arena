@@ -4,7 +4,7 @@ import irc.connection
 import irc.events
 import configparser
 import ssl
-from _collections import defaultdict
+from collections import defaultdict, Counter
 import re
 
 class ArenaVoteCounter:
@@ -17,6 +17,8 @@ class ArenaVoteCounter:
     def play_card(self, index):
         self._votes["card{}".format(index)] += 1
 
+    def tally_votes(self):
+        return Counter(self._votes).most_common(1)[0]
 
 class TpaEventHandler:
     """
@@ -75,7 +77,16 @@ class TpaEventHandler:
         if msg == "!priority":
             self._votes = ArenaVoteCounter()
             # Start a timer to count the votes.
-        if msg == "!pass":
+            return
+
+        if getattr(self, "_votes", None) is None:
+            print("Invalid command {}".format(msg))
+
+        if msg == "!execute":
+            action = self._votes.tally_votes()
+            print(action)
+            self._votes = None
+        elif msg == "!pass":
             self._votes.pass_turn()
         elif re.match("!play([0-9])", msg):
             # Play the nth card in your hand.
