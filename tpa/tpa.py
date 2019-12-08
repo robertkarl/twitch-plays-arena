@@ -19,6 +19,9 @@ class ArenaVoteCounter:
     def play_card(self, index):
         self._votes["card{}".format(index)] += 1
 
+    def attack(self):
+        self._votes['attack'] += 1
+
     def tally_votes(self):
         return Counter(self._votes).most_common(1)[0]
 
@@ -78,6 +81,7 @@ class TpaEventHandler:
         print("received message {}".format(msg))
         if msg == "!priority":
             self._votes = ArenaVoteCounter()
+            self.server.privmsg(self._channel_name, 'got a priority message lawl')
             # Start a timer to count the votes.
             return
 
@@ -93,6 +97,8 @@ class TpaEventHandler:
             self._votes = None
         elif msg == "!pass":
             self._votes.pass_turn()
+        elif msg == '!attack':
+            self._votes.attack()
         elif re.match("!play([0-9])", msg):
             # Play the nth card in your hand.
             n = int(re.match("!play([0-9])", msg).group(1))
