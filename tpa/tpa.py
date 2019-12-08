@@ -8,16 +8,8 @@ from collections import defaultdict, Counter, OrderedDict
 import re
 
 """
-1-N
-Orange
-Blue
+TODO: add randomization for tiebreaking
 
-blocking syntax: a:b,c:d
-attacking syntax: n1:enemy_thing,n2:enemy_thing
-
-Named Permanent:number
-
-Me, You
 """
 
 
@@ -132,6 +124,7 @@ class TpaEventHandler:
     def on_chat_command(self, msg):
         print("received message {}".format(msg))
         if msg == "p":
+            self.server.privmsg(self._channel_name, "Initiating Voting")
             self._votes = ArenaVoteCounter()
             return
 
