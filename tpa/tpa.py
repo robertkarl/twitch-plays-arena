@@ -9,7 +9,7 @@ import re
 
 class ArenaVoteCounter:
     def __init__(self):
-        self._votes = defaultdict(0)
+        self._votes = defaultdict(int)
 
     def pass_turn(self):
         self._votes["pass"] += 1
