@@ -7,6 +7,7 @@ import ssl
 from collections import defaultdict, Counter
 import re
 
+
 class ArenaVoteCounter:
     def __init__(self):
         self._votes = defaultdict(int)
@@ -20,7 +21,7 @@ class ArenaVoteCounter:
         self._votes["card{}".format(index)] += 1
 
     def attack(self):
-        self._votes['attack'] += 1
+        self._votes["attack"] += 1
 
     def tally_votes(self):
         return Counter(self._votes).most_common(1)[0]
@@ -30,6 +31,7 @@ class ArenaVoteCounter:
 
     def cancel(self):
         self._votes["cancel"] += 1
+
 
 class TpaEventHandler:
     """
@@ -63,7 +65,10 @@ class TpaEventHandler:
             print("requesting permissions")
             self.server.cap("LS")
             self.server.cap(
-                "REQ", "twitch.tv/commands", "twitch.tv/tags", "twitch.tv/membership"
+                "REQ",
+                "twitch.tv/commands",
+                "twitch.tv/tags",
+                "twitch.tv/membership",
             )
             self.server.cap("END")
             self._has_requested_perms = True
@@ -87,15 +92,20 @@ class TpaEventHandler:
         print("received message {}".format(msg))
         if msg == "p":
             self._votes = ArenaVoteCounter()
-            self.server.privmsg(self._channel_name, 'got a priority message lawl')
+            self.server.privmsg(
+                self._channel_name, "got a priority message lawl"
+            )
             # Start a timer to count the votes.
             return
 
         if msg == "h":
-            self.server.privmsg(self._channel_name, (
-"Commands: p=priority, x=execute, #1-9=play card 1-9, a=all attack, >>=pass, h=help "
-"c=accept, k=cancel"))
-
+            self.server.privmsg(
+                self._channel_name,
+                (
+                    "Commands: p=priority, x=execute, #1-9=play card 1-9, a=all attack, >>=pass, h=help "
+                    "c=accept, k=cancel"
+                ),
+            )
 
         if getattr(self, "_votes", None) is None:
             print("Invalid command {}".format(msg))
@@ -105,19 +115,22 @@ class TpaEventHandler:
             action = self._votes.tally_votes()
             print(action)
             action_name, action_count = action
-            self.server.privmsg(self._channel_name, '{} with {} votes'.format(action_name, action_count))
+            self.server.privmsg(
+                self._channel_name,
+                "{} with {} votes".format(action_name, action_count),
+            )
             self._votes = None
         elif msg == ">>":
             self._votes.pass_turn()
-        elif msg == 'a':
+        elif msg == "a":
             self._votes.attack()
         elif re.match("([1-9])", msg):
             # Play the nth card in your hand.
             n = int(re.match("([0-9])", msg).group(1))
             self._votes.play_card(n)
-        elif msg == 'c':
+        elif msg == "c":
             self._votes.accept()
-        elif msg == 'k':
+        elif msg == "k":
             self._votes.cancel()
 
 
