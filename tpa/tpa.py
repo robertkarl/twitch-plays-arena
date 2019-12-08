@@ -4,7 +4,7 @@ import irc.connection
 import irc.events
 import configparser
 import ssl
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, OrderedDict
 import re
 
 """
@@ -21,31 +21,6 @@ Me, You
 """
 
 
-def _parse_blocker_vote(vote: str) -> bool:
-    """Determine whether a vote is a valid vote for blocking entities."""
-    single_block_regex = r"[0-9]+:[0-9]+"
-    return (
-        re.match("^({sbr},)*{sbr}$".format(sbr=single_block_regex), vote)
-        is not None
-    )
-
-
-def _parse_attacker_vote(vote: str) -> bool:
-    single_attack_regex = r"[0-9]+:[a-zA-Z0-9_ ]+"
-    return (
-        re.match("^({sar},)*{sar}$".format(sar=single_attack_regex), vote)
-        is not None
-    )
-
-
-def _parse_named_permanent_vote(vote: str) -> bool:
-    return re.match("^[a-zA-Z0-9_ ]+$", vote) is not None
-
-
-def _parse_player_vote(vote: str) -> bool:
-    return vote in ("you", "me")
-
-
 class ArenaVoteCounter:
     """This class is responsible for tallying and interpreting votes."""
 
@@ -56,41 +31,43 @@ class ArenaVoteCounter:
         # Add an explicit key. This will be the default "tally_votes" action.
         self._votes["pass"] = 0
 
-    def tally_vote(self, vote):
-        if vote == "o":
-            self._votes[vote] += 1
-        elif vote == "b":
-            self._votes[vote] += 1
-        elif vote in [str(n) for n in range(1, 20)]:
-            self._votes[vote] += 1
-        elif _parse_blocker_vote(vote):
-            self._votes[vote] += 1
-        elif _parse_attacker_vote(vote):
-            self._votes[vote] += 1
-        elif _parse_named_permanent_vote(vote):
-            self._votes[vote] += 1
-        elif _parse_player_vote[vote]:
-            self._votes[vote] += 1
-        else:
-            print("Invalid vote {}".format(vote))
+        _orange_regex = "^o$"
+        _blue_regex = "^b$"
+        _n_regex = "^[0-9]+$"
 
-    def pass_turn(self):
-        self._votes["pass"] += 1
+        single_block_regex = r"[0-9]+:[0-9]+"
+        _blocker_regex = "^({sbr};)*{sbr}$".format(sbr=single_block_regex)
 
-    def play_card(self, index):
-        self._votes["card{}".format(index)] += 1
+        single_attack_regex = r"[0-9]+:[a-zA-Z0-9_, ]+"
+        _attacker_regex = "^({sar};)*{sar}$".format(sar=single_attack_regex)
 
-    def attack(self):
-        self._votes["attack"] += 1
+        _named_permanent_regex = "^[a-zA-Z0-9_, ]+:[0-9]+$"
+
+        _player_regex = "^(you|me)$"
+
+        self._descriptions_to_regexes = OrderedDict(
+            {
+                "Click the orange button": _orange_regex,
+                "Click the blue button": _blue_regex,
+                "Choose the nth item": _n_regex,
+                "Map blockers, e.g. 1:2 will map our first blocker to the second attacker": _blocker_regex,
+                "Map attackers to entities, e.g. 1:you,3:Teferi, Time Raveler will map our first attacker to the opponent, and our third attacker to Teferi": _attacker_regex,
+                "Choose a permanent to click on": _named_permanent_regex,
+                "Choose a player": _player_regex,
+            }
+        )
+
+    def vote(self, vote: str) -> bool:
+        for regex in self._descriptions_to_regexes.values():
+            if re.match(regex, vote):
+                print("{} Matched regex {}".format(vote, regex))
+                self._votes[vote] += 1
+                return True
+        print("Invalid regex {}".format(vote))
+        return False
 
     def tally_votes(self):
         return Counter(self._votes).most_common(1)[0]
-
-    def accept(self):
-        self._votes["accept"] += 1
-
-    def cancel(self):
-        self._votes["cancel"] += 1
 
     def check_quorum(self):
         return sum(self._votes.values()) >= self.QUORUM_SIZE
@@ -107,6 +84,7 @@ class TpaEventHandler:
         self.reactor = reactor
         self._has_requested_perms = False
         self._channel_name = channel_to_join
+        self._votes = ArenaVoteCounter()
 
     def on_welcome(self, connection, event):
         self.request_only_once()
@@ -155,39 +133,18 @@ class TpaEventHandler:
         print("received message {}".format(msg))
         if msg == "p":
             self._votes = ArenaVoteCounter()
-            self.server.privmsg(self._channel_name, "")
-            # Start a timer to count the votes.
             return
 
         if msg == "h":
-            self.server.privmsg(
-                self._channel_name,
-                (
-                    "Commands: p=priority, x=execute, #1-9=play card 1-9, a=all attack, >>=pass, h=help "
-                    "c=accept, k=cancel"
-                ),
-            )
+            commands_msg = [
+                "{}: {}".format(d, r)
+                for d, r in self._votes._descriptions_to_regexes.items()
+            ]
+            commands_msg = ",".join(commands_msg)
+            self.server.privmsg(self._channel_name, commands_msg)
             return
 
-        if getattr(self, "_votes", None) is None:
-            print("Invalid command {}".format(msg))
-            return
-
-        if msg == "x":
-            self.choose_action()
-            return
-        elif msg == ">>":
-            self._votes.pass_turn()
-        elif msg == "a":
-            self._votes.attack()
-        elif re.match("([1-9])", msg):
-            # Play the nth card in your hand.
-            n = int(re.match("([0-9])", msg).group(1))
-            self._votes.play_card(n)
-        elif msg == "c":
-            self._votes.accept()
-        elif msg == "k":
-            self._votes.cancel()
+        self._votes.vote(msg)
 
         if self._votes.check_quorum():
             self.choose_action()
@@ -201,7 +158,7 @@ class TpaEventHandler:
             self._channel_name,
             "{} with {} votes".format(action_name, action_count),
         )
-        self._votes = None
+        self._votes = ArenaVoteCounter()
 
 
 def main(config):

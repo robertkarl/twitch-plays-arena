@@ -24,7 +24,7 @@ class TPAVoteTest(unittest.TestCase):
 
     @unittest.skipUnless(False, "skipping LOL!")
     def test_vote_tallies(self):
-        self.eh.on_chat_command("!priority")
+        self.eh.on_chat_command("p")
 
         self.eh.on_chat_command("!pass")
         self.eh.on_chat_command("!play0")
@@ -37,14 +37,21 @@ class TPAVoteTest(unittest.TestCase):
         out = out.getvalue().strip()
         self.assertEqual(out, "received message !execute\n('card1', 2)")
 
-    def test_parse_blocker_vote(self):
-        self.assertTrue(tpa._parse_blocker_vote("1:2,3:4"))
+    def test_parse_vote(self):
+        counter = tpa.ArenaVoteCounter()
 
-        self.assertTrue(tpa._parse_attacker_vote("1:Teferi the Bro,2:you"))
+        self.assertTrue(counter.tally_vote("o"))
+        self.assertTrue(counter.tally_vote("b"))
+        self.assertTrue(counter.tally_vote("1"))
+        self.assertTrue(counter.tally_vote("12"))
+        self.assertTrue(counter.tally_vote("1:2"))
+        self.assertTrue(counter.tally_vote("1:2;3:4"))
+        self.assertTrue(counter.tally_vote("1:Teferi, Time Raveler;3:you"))
+        self.assertTrue(counter.tally_vote("Castle, Vantress:1"))
+        self.assertTrue(counter.tally_vote("you"))
+        self.assertTrue(counter.tally_vote("me"))
 
-        self.assertTrue(tpa._parse_named_permanent_vote("Castle Vantress"))
-
-        self.assertTrue(tpa._parse_player_vote("you"))
+        self.assertFalse(counter.tally_vote(";;;"))
 
 
 if __name__ == "__main__":
