@@ -10,6 +10,8 @@ import re
 class ArenaVoteCounter:
     def __init__(self):
         self._votes = defaultdict(int)
+        # Add an explicit key. This will be the default "tally_votes" action.
+        self._votes["pass"] = 0
 
     def pass_turn(self):
         self._votes["pass"] += 1
