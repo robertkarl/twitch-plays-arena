@@ -81,6 +81,7 @@ class TpaEventHandler:
 
         if getattr(self, "_votes", None) is None:
             print("Invalid command {}".format(msg))
+            return
 
         if msg == "!execute":
             action = self._votes.tally_votes()
