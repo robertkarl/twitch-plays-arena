@@ -4,12 +4,25 @@ import irc.connection
 import irc.events
 import configparser
 import ssl
+from _collections import defaultdict
+
+
+class ArenaVoteCounter:
+    def __init__(self):
+        self._votes = defaultdict(0)
+
+    def pass_turn(self):
+        self._votes["pass"] += 1
+
+    def play_card(self, index):
+        self._votes["card{}".format(index)] += 1
 
 
 class TpaEventHandler:
     """
     Our event handler.
     Stores the reactor and server instances (irc library objects) for later use. """
+
     def __init__(self, reactor, server, channel_to_join):
         # type: (irc.client.server) -> None
         self.server = server
@@ -24,7 +37,7 @@ class TpaEventHandler:
         self.server.join(self._channel_name)
 
     def on_pong(self, connection, event):
-        self.server.ping('tmi.twitch.tv')
+        self.server.ping("tmi.twitch.tv")
 
     def request_only_once(self):
         """
@@ -54,6 +67,17 @@ class TpaEventHandler:
         """
         print(event)
 
+    def on_pubmsg(self, connection, event):
+        self.on_chat_command(event.arguments[0])
+
+    def on_chat_command(self, msg):
+        print("received message {}".format(msg))
+        if msg == "!priority":
+            self._votes = ArenaVoteCounter()
+            # Start a timer to count the votes.
+        if msg == "!pass":
+            self._votes.pass_turn()
+
 
 def main(config):
     server_addr = config["server"]
@@ -82,13 +106,13 @@ def main(config):
 
     tpa_handler = TpaEventHandler(client, server, channel_name)
     client.add_global_handler("welcome", tpa_handler.on_welcome)
-    client.add_global_handler("join", tpa_handler.on_anyevent)
+    # The following is for users joining the channel:
+    # client.add_global_handler("join", tpa_handler.on_anyevent)
     client.add_global_handler("userstate", tpa_handler.on_userstate)
     client.add_global_handler("clearchat", tpa_handler.on_clearchat)
     client.add_global_handler("roomstate", tpa_handler.on_anyevent)
     client.add_global_handler("cap", tpa_handler.on_cap)
-    for protocol_name in irc.events.protocol:
-        client.add_global_handler(protocol_name, tpa_handler.on_anyevent)
+    client.add_global_handler("pubmsg", tpa_handler.on_pubmsg)
 
     client.process_forever()
 
@@ -96,7 +120,7 @@ def main(config):
 if __name__ == "__main__":
     import logging
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARN)
     config = configparser.ConfigParser()
     config.read("tpa.ini")
 
