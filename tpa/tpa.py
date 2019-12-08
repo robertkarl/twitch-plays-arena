@@ -25,6 +25,12 @@ class ArenaVoteCounter:
     def tally_votes(self):
         return Counter(self._votes).most_common(1)[0]
 
+    def accept(self):
+        self._votes["accept"] += 1
+
+    def cancel(self):
+        self._votes["cancel"] += 1
+
 class TpaEventHandler:
     """
     Our event handler.
@@ -79,30 +85,40 @@ class TpaEventHandler:
 
     def on_chat_command(self, msg):
         print("received message {}".format(msg))
-        if msg == "!priority":
+        if msg == "p":
             self._votes = ArenaVoteCounter()
             self.server.privmsg(self._channel_name, 'got a priority message lawl')
             # Start a timer to count the votes.
             return
 
+        if msg == "h":
+            self.server.privmsg(self._channel_name, (
+"Commands: p=priority, x=execute, #1-9=play card 1-9, a=all attack, >>=pass, h=help "
+"c=accept, k=cancel"))
+
+
         if getattr(self, "_votes", None) is None:
             print("Invalid command {}".format(msg))
             return
 
-        if msg == "!execute":
+        if msg == "x":
             action = self._votes.tally_votes()
             print(action)
             action_name, action_count = action
             self.server.privmsg(self._channel_name, '{} with {} votes'.format(action_name, action_count))
             self._votes = None
-        elif msg == "!pass":
+        elif msg == ">>":
             self._votes.pass_turn()
-        elif msg == '!attack':
+        elif msg == 'a':
             self._votes.attack()
-        elif re.match("!play([0-9])", msg):
+        elif re.match("([1-9])", msg):
             # Play the nth card in your hand.
-            n = int(re.match("!play([0-9])", msg).group(1))
+            n = int(re.match("([0-9])", msg).group(1))
             self._votes.play_card(n)
+        elif msg == 'c':
+            self._votes.accept()
+        elif msg == 'k':
+            self._votes.cancel()
 
 
 def main(config):
