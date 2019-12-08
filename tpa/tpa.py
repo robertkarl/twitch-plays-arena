@@ -5,7 +5,7 @@ import irc.events
 import configparser
 import ssl
 from _collections import defaultdict
-
+import re
 
 class ArenaVoteCounter:
     def __init__(self):
@@ -77,6 +77,10 @@ class TpaEventHandler:
             # Start a timer to count the votes.
         if msg == "!pass":
             self._votes.pass_turn()
+        elif re.match("!play([0-9])", msg):
+            # Play the nth card in your hand.
+            n = int(re.match("!play([0-9])", msg).group(1))
+            self._votes.play_card(n)
 
 
 def main(config):
