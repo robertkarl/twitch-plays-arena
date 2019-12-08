@@ -7,14 +7,72 @@ import ssl
 from collections import defaultdict, Counter
 import re
 
+"""
+1-N
+Orange
+Blue
+
+blocking syntax: a:b,c:d
+attacking syntax: n1:enemy_thing,n2:enemy_thing
+
+Named Permanent:number
+
+Me, You
+"""
+
+
+def _parse_blocker_vote(vote: str) -> bool:
+    """Determine whether a vote is a valid vote for blocking entities."""
+    single_block_regex = r"[0-9]+:[0-9]+"
+    return (
+        re.match("^({sbr},)*{sbr}$".format(sbr=single_block_regex), vote)
+        is not None
+    )
+
+
+def _parse_attacker_vote(vote: str) -> bool:
+    single_attack_regex = r"[0-9]+:[a-zA-Z0-9_ ]+"
+    return (
+        re.match("^({sar},)*{sar}$".format(sar=single_attack_regex), vote)
+        is not None
+    )
+
+
+def _parse_named_permanent_vote(vote: str) -> bool:
+    return re.match("^[a-zA-Z0-9_ ]+$", vote) is not None
+
+
+def _parse_player_vote(vote: str) -> bool:
+    return vote in ("you", "me")
+
 
 class ArenaVoteCounter:
+    """This class is responsible for tallying and interpreting votes."""
+
     QUORUM_SIZE = 2
 
     def __init__(self):
         self._votes = defaultdict(int)
         # Add an explicit key. This will be the default "tally_votes" action.
         self._votes["pass"] = 0
+
+    def tally_vote(self, vote):
+        if vote == "o":
+            self._votes[vote] += 1
+        elif vote == "b":
+            self._votes[vote] += 1
+        elif vote in [str(n) for n in range(1, 20)]:
+            self._votes[vote] += 1
+        elif _parse_blocker_vote(vote):
+            self._votes[vote] += 1
+        elif _parse_attacker_vote(vote):
+            self._votes[vote] += 1
+        elif _parse_named_permanent_vote(vote):
+            self._votes[vote] += 1
+        elif _parse_player_vote[vote]:
+            self._votes[vote] += 1
+        else:
+            print("Invalid vote {}".format(vote))
 
     def pass_turn(self):
         self._votes["pass"] += 1
