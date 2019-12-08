@@ -6,24 +6,31 @@ import configparser
 import ssl
 
 
-def notify_on_message(connection, event):
-    print("message received. event: {}".format(event))
-
-
 class TpaEventHandler:
-    def __init__(self, reactor, server):
+    """
+    Our event handler.
+    Stores the reactor and server instances (irc library objects) for later use. """
+    def __init__(self, reactor, server, channel_to_join):
         # type: (irc.client.server) -> None
         self.server = server
         self.reactor = reactor
         self._has_requested_perms = False
+        self._channel_name = channel_to_join
 
     def on_welcome(self, connection, event):
         self.request_only_once()
 
     def on_cap(self, connection, event):
-        self.server.join("#wyattdarbymtg")
+        self.server.join(self._channel_name)
+
+    def on_pong(self, connection, event):
+        self.server.ping('tmi.twitch.tv')
 
     def request_only_once(self):
+        """
+        Request permissions once.
+        :return:
+        """
         if self._has_requested_perms:
             return
         else:
@@ -42,6 +49,9 @@ class TpaEventHandler:
         print(event)
 
     def on_anyevent(self, connection, event):
+        """
+        pretty much a catch-all event handler.
+        """
         print(event)
 
 
@@ -49,6 +59,7 @@ def main(config):
     server_addr = config["server"]
     port = int(config["port"])
     creds = config["creds"]
+    channel_name = config["channel"]
 
     ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
 
@@ -69,7 +80,7 @@ def main(config):
     )
     print(server.get_server_name())
 
-    tpa_handler = TpaEventHandler(client, server)
+    tpa_handler = TpaEventHandler(client, server, channel_name)
     client.add_global_handler("welcome", tpa_handler.on_welcome)
     client.add_global_handler("join", tpa_handler.on_anyevent)
     client.add_global_handler("userstate", tpa_handler.on_userstate)
