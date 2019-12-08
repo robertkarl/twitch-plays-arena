@@ -65,6 +65,7 @@ class ArenaVoteCounter:
         return sum(self._votes.values()) >= self.QUORUM_SIZE
 
 
+
 class TpaEventHandler:
     """
     Our event handler.
@@ -98,10 +99,7 @@ class TpaEventHandler:
             print("requesting permissions")
             self.server.cap("LS")
             self.server.cap(
-                "REQ",
-                "twitch.tv/commands",
-                "twitch.tv/tags",
-                "twitch.tv/membership",
+                "REQ", "twitch.tv/commands", "twitch.tv/tags", "twitch.tv/membership",
             )
             self.server.cap("END")
             self._has_requested_perms = True
@@ -122,7 +120,6 @@ class TpaEventHandler:
         self.on_chat_command(event.arguments[0])
 
     def on_chat_command(self, msg):
-        print("received message {}".format(msg))
         if msg == "p":
             self.server.privmsg(self._channel_name, "Initiating Voting")
             self._votes = ArenaVoteCounter()
@@ -148,8 +145,7 @@ class TpaEventHandler:
         print(action)
         action_name, action_count = action
         self.server.privmsg(
-            self._channel_name,
-            "{} with {} votes".format(action_name, action_count),
+            self._channel_name, "{} with {} votes".format(action_name, action_count),
         )
         self._votes = ArenaVoteCounter()
 
