@@ -1,5 +1,6 @@
 tpa.ini
 venv/
+.idea/
 *.pyc
 __pycache__
 **/.idea/workspace.xml

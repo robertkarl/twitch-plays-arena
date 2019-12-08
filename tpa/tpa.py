@@ -88,6 +88,8 @@ class TpaEventHandler:
         if msg == "!execute":
             action = self._votes.tally_votes()
             print(action)
+            action_name, action_count = action
+            self.server.privmsg(self._channel_name, '{} with {} votes'.format(action_name, action_count))
             self._votes = None
         elif msg == "!pass":
             self._votes.pass_turn()
