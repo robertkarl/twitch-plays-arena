@@ -9,6 +9,8 @@ import re
 
 
 class ArenaVoteCounter:
+    QUORUM_SIZE = 2
+
     def __init__(self):
         self._votes = defaultdict(int)
         # Add an explicit key. This will be the default "tally_votes" action.
@@ -31,6 +33,9 @@ class ArenaVoteCounter:
 
     def cancel(self):
         self._votes["cancel"] += 1
+
+    def check_quorum(self):
+        return sum(self._votes.values()) >= self.QUORUM_SIZE
 
 
 class TpaEventHandler:
@@ -92,9 +97,7 @@ class TpaEventHandler:
         print("received message {}".format(msg))
         if msg == "p":
             self._votes = ArenaVoteCounter()
-            self.server.privmsg(
-                self._channel_name, "got a priority message lawl"
-            )
+            self.server.privmsg(self._channel_name, "")
             # Start a timer to count the votes.
             return
 
@@ -106,20 +109,15 @@ class TpaEventHandler:
                     "c=accept, k=cancel"
                 ),
             )
+            return
 
         if getattr(self, "_votes", None) is None:
             print("Invalid command {}".format(msg))
             return
 
         if msg == "x":
-            action = self._votes.tally_votes()
-            print(action)
-            action_name, action_count = action
-            self.server.privmsg(
-                self._channel_name,
-                "{} with {} votes".format(action_name, action_count),
-            )
-            self._votes = None
+            self.choose_action()
+            return
         elif msg == ">>":
             self._votes.pass_turn()
         elif msg == "a":
@@ -132,6 +130,20 @@ class TpaEventHandler:
             self._votes.accept()
         elif msg == "k":
             self._votes.cancel()
+
+        if self._votes.check_quorum():
+            self.choose_action()
+
+    def choose_action(self) -> None:
+        """Choose a vote action, and reset the votes counter."""
+        action = self._votes.tally_votes()
+        print(action)
+        action_name, action_count = action
+        self.server.privmsg(
+            self._channel_name,
+            "{} with {} votes".format(action_name, action_count),
+        )
+        self._votes = None
 
 
 def main(config):
