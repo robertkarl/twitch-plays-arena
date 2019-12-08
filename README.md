@@ -1,9 +1,12 @@
 # Twitch Plays Arena
 
 #### Use virtualenv
-$ virtualenv -p python3.6 venv
-$ . venv/bin/activate
-(venv) $ pip install irc
+```
+virtualenv -p python3 venv
+. venv/bin/activate
+pip install irc
+make run
+```
 
 #### Set up the twitch bot
 
@@ -12,7 +15,7 @@ Generate an oath token here:
 https://twitchapps.com/tmi/
 ```
 cp tpa-sample.ini tpa.ini
-vim tpa-sample.ini # Add your oath token
+vim tpa.ini # Add your oath token
 ```
 
 #### 
