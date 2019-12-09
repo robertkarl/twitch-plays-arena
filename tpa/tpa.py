@@ -1,3 +1,4 @@
+import actions
 import irc
 import irc.client
 import irc.connection
@@ -9,7 +10,6 @@ import re
 
 """
 TODO: add randomization for tiebreaking
-
 """
 
 
@@ -20,50 +20,61 @@ class ArenaVoteCounter:
 
     def __init__(self):
         self._votes = defaultdict(int)
+        self.reset_votes()
+
+    def vote(self, vote: str) -> bool:
+        self._votes[vote] += 1
+
+    def tally_votes(self) -> str:
+        return Counter(self._votes).most_common(1)[0][0]
+
+    def reset_votes(self) -> None:
+        self._votes.clear()
         # Add an explicit key. This will be the default "tally_votes" action.
         self._votes["pass"] = 0
 
-        _orange_regex = "^o$"
-        _blue_regex = "^b$"
-        _n_regex = "^[0-9]+$"
+    def check_quorum(self) -> bool:
+        return sum(self._votes.values()) >= self.QUORUM_SIZE
 
-        single_block_regex = r"[0-9]+:[0-9]+"
-        _blocker_regex = "^({sbr};)*{sbr}$".format(sbr=single_block_regex)
 
-        single_attack_regex = r"[0-9]+:[a-zA-Z0-9_, ]+"
-        _attacker_regex = "^({sar};)*{sar}$".format(sar=single_attack_regex)
-
-        _named_permanent_regex = "^[a-zA-Z0-9_, ]+:[0-9]+$"
+"""
+        _named_permanent_regex = 
 
         _player_regex = "^(you|me)$"
 
-        self._descriptions_to_regexes = OrderedDict(
-            {
-                "Click the orange button": _orange_regex,
-                "Click the blue button": _blue_regex,
-                "Choose the nth item": _n_regex,
-                "Map blockers, e.g. 1:2 will map our first blocker to the second attacker": _blocker_regex,
-                "Map attackers to entities, e.g. 1:you,3:Teferi, Time Raveler will map our first attacker to the opponent, and our third attacker to Teferi": _attacker_regex,
-                "Choose a permanent to click on": _named_permanent_regex,
-                "Choose a player": _player_regex,
-            }
+        RegexActions.register_orange_button_action(self._parser)
+
+        self._parser.register_regex(
+            _orange_regex,
+            orange_button_action,
+            help_msg="click the orange button",
+        )
+        self._parser.register_regex(
+            _blue_regex, blue_button_action, help_msg="click the blue button"
+        )
+        self._parser.register_regex(
+            _n_regex,
+            nth_element_action,
+            help_msg="select the nth available option",
+        )
+        self._parser.register_regex(
+            _blocker_regex,
+            _blocker_action,
+            help_msg="map blockers to attackers",
+        )
+        self._parser.register_regex(
+            _attacker_regex,
+            _attacker_action,
+            help_msg="map attackers to opponents/planeswalkers",
+        )
+        # TODO I guess this needs to work on planeswalkers the opponent controls, and that I control. (Shocking my vs. their planeswalker).
+        self._parser.register_regex(
+            _named_permanent_regex,
+            _named_permanent_action,
+            help_msg="select a permanent on the battlefield",
         )
 
-    def vote(self, vote: str) -> bool:
-        for regex in self._descriptions_to_regexes.values():
-            if re.match(regex, vote):
-                print("{} Matched regex {}".format(vote, regex))
-                self._votes[vote] += 1
-                return True
-        print("Invalid regex {}".format(vote))
-        return False
-
-    def tally_votes(self):
-        return Counter(self._votes).most_common(1)[0]
-
-    def check_quorum(self):
-        return sum(self._votes.values()) >= self.QUORUM_SIZE
-
+"""
 
 
 class TpaEventHandler:
@@ -78,6 +89,7 @@ class TpaEventHandler:
         self._has_requested_perms = False
         self._channel_name = channel_to_join
         self._votes = ArenaVoteCounter()
+        self._parser = actions.make_parser(server, self._channel_name)
 
     def on_welcome(self, connection, event):
         self.request_only_once()
@@ -99,7 +111,10 @@ class TpaEventHandler:
             print("requesting permissions")
             self.server.cap("LS")
             self.server.cap(
-                "REQ", "twitch.tv/commands", "twitch.tv/tags", "twitch.tv/membership",
+                "REQ",
+                "twitch.tv/commands",
+                "twitch.tv/tags",
+                "twitch.tv/membership",
             )
             self.server.cap("END")
             self._has_requested_perms = True
@@ -120,21 +135,26 @@ class TpaEventHandler:
         self.on_chat_command(event.arguments[0])
 
     def on_chat_command(self, msg):
+        print("received message {}".format(msg))
+
         if msg == "p":
             self.server.privmsg(self._channel_name, "Initiating Voting")
             self._votes = ArenaVoteCounter()
             return
 
         if msg == "h":
-            commands_msg = [
-                "{}: {}".format(d, r)
-                for d, r in self._votes._descriptions_to_regexes.items()
-            ]
-            commands_msg = ",".join(commands_msg)
+            commands_msg = self._parser.get_help()
+            commands_msg = commands_msg.replace("\n", "    ")
+            commands_msg = commands_msg.replace("\t", "  ")
             self.server.privmsg(self._channel_name, commands_msg)
             return
 
-        self._votes.vote(msg)
+        if msg == "x":
+            self.choose_action()
+            return
+
+        if self._parser.is_valid_regex(msg):
+            self._votes.vote(msg)
 
         if self._votes.check_quorum():
             self.choose_action()
@@ -142,12 +162,8 @@ class TpaEventHandler:
     def choose_action(self) -> None:
         """Choose a vote action, and reset the votes counter."""
         action = self._votes.tally_votes()
-        print(action)
-        action_name, action_count = action
-        self.server.privmsg(
-            self._channel_name, "{} with {} votes".format(action_name, action_count),
-        )
-        self._votes = ArenaVoteCounter()
+        self._parser.take_action(action, single_action=True)
+        self._votes.reset_votes()
 
 
 def main(config):
