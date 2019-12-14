@@ -8,10 +8,29 @@ import ssl
 from collections import defaultdict, Counter, OrderedDict
 import re
 import pathlib
+import threading
 
 """
 TODO: add randomization for tiebreaking
 """
+
+_TPA_HANDLER = None
+
+def _run_client_forever(handler):
+    handler.reactor.process_forever()
+    print('done running forever')
+
+def get_tpa_handler():
+    # type: (None) -> TpaEventHandler
+    """Get the chat bot, creating it if not available."""
+    global _TPA_HANDLER
+    if _TPA_HANDLER is None:
+        config = get_config(pathlib.Path.home() / "config.ini")
+        _TPA_HANDLER = get_tpa_handler_and_client(config["main"])["tpa_handler"]
+        reactor_run_thread = threading.Thread(target=_run_client_forever, args=(_TPA_HANDLER,))
+        _TPA_HANDLER._running_thread = reactor_run_thread
+        reactor_run_thread.start()
+    return _TPA_HANDLER
 
 
 class ArenaVoteCounter:
@@ -29,13 +48,17 @@ class ArenaVoteCounter:
     def tally_votes(self) -> str:
         return Counter(self._votes).most_common(1)[0][0]
 
+    def start_counting(self) -> None:
+        self._votes = defaultdict(int)
+
     def reset_votes(self) -> None:
-        self._votes.clear()
-        # Add an explicit key. This will be the default "tally_votes" action.
-        self._votes["pass"] = 0
+        self._votes = None
 
     def check_quorum(self) -> bool:
         return sum(self._votes.values()) >= self.QUORUM_SIZE
+
+    def is_tallying(self):
+        return self._votes is not None
 
 
 class TpaEventHandler:
@@ -94,6 +117,8 @@ class TpaEventHandler:
 
     def on_pubmsg(self, connection, event):
         self.on_chat_command(event.arguments[0])
+    def send_message_from_bot(self, msg):
+        self.server.privmsg(self._channel_name, msg)
 
     def on_chat_command(self, msg):
         print("received message {}".format(msg))
@@ -117,14 +142,14 @@ class TpaEventHandler:
         if self._parser.is_valid_regex(msg):
             self._votes.vote(msg)
 
-        if self._votes.check_quorum():
-            self.choose_action()
-
     def choose_action(self) -> None:
         """Choose a vote action, and reset the votes counter."""
         action = self._votes.tally_votes()
         self._parser.take_action(action, single_action=True)
         self._votes.reset_votes()
+
+    def get_vote_counter(self):
+        return self._votes
 
 
 def main(config):
@@ -150,12 +175,10 @@ def get_tpa_handler_and_client(config):
     server.connect(
         server=server_addr,
         port=port,
-        nickname="rskjr",
+        nickname="arena__bot",
         password=creds,
         connect_factory=ssl_factory,
     )
-    print(server.get_server_name())
-
     tpa_handler = TpaEventHandler(client, server, channel_name)
     client.add_global_handler("welcome", tpa_handler.on_welcome)
     # The following is for users joining the channel:
