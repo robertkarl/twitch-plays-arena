@@ -9,6 +9,8 @@ from collections import defaultdict, Counter, OrderedDict
 import re
 import pathlib
 import threading
+import logging
+logging.basicConfig(level=logging.WARN)
 
 """
 TODO: add randomization for tiebreaking
