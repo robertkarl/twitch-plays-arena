@@ -7,6 +7,7 @@ import configparser
 import ssl
 from collections import defaultdict, Counter, OrderedDict
 import re
+import pathlib
 
 """
 TODO: add randomization for tiebreaking
@@ -35,46 +36,6 @@ class ArenaVoteCounter:
 
     def check_quorum(self) -> bool:
         return sum(self._votes.values()) >= self.QUORUM_SIZE
-
-
-"""
-        _named_permanent_regex = 
-
-        _player_regex = "^(you|me)$"
-
-        RegexActions.register_orange_button_action(self._parser)
-
-        self._parser.register_regex(
-            _orange_regex,
-            orange_button_action,
-            help_msg="click the orange button",
-        )
-        self._parser.register_regex(
-            _blue_regex, blue_button_action, help_msg="click the blue button"
-        )
-        self._parser.register_regex(
-            _n_regex,
-            nth_element_action,
-            help_msg="select the nth available option",
-        )
-        self._parser.register_regex(
-            _blocker_regex,
-            _blocker_action,
-            help_msg="map blockers to attackers",
-        )
-        self._parser.register_regex(
-            _attacker_regex,
-            _attacker_action,
-            help_msg="map attackers to opponents/planeswalkers",
-        )
-        # TODO I guess this needs to work on planeswalkers the opponent controls, and that I control. (Shocking my vs. their planeswalker).
-        self._parser.register_regex(
-            _named_permanent_regex,
-            _named_permanent_action,
-            help_msg="select a permanent on the battlefield",
-        )
-
-"""
 
 
 class TpaEventHandler:
@@ -167,6 +128,10 @@ class TpaEventHandler:
 
 
 def main(config):
+    client = get_tpa_handler_and_client(config)["client"]
+    client.process_forever()
+
+def get_tpa_handler_and_client(config):
     server_addr = config["server"]
     port = int(config["port"])
     creds = config["creds"]
@@ -201,14 +166,17 @@ def main(config):
     client.add_global_handler("cap", tpa_handler.on_cap)
     client.add_global_handler("pubmsg", tpa_handler.on_pubmsg)
 
-    client.process_forever()
+    return {"tpa_handler": tpa_handler, "client": client}
 
+def get_config(pathname: pathlib.Path):
+    config = configparser.ConfigParser()
+    config.read(pathname)
+    return config
 
 if __name__ == "__main__":
     import logging
 
     logging.basicConfig(level=logging.WARN)
-    config = configparser.ConfigParser()
-    config.read("tpa.ini")
+    config = get_config("tpa.ini")
 
     main(config["main"])
