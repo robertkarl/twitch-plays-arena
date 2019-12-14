@@ -1,6 +1,7 @@
 import collections
 import re
 from typing import Callable, List
+import app
 
 
 class RegexActionParser:
@@ -91,6 +92,7 @@ class RegexActions:
         def orange_button_action():
             print("Received orange button action")
             server.privmsg(channel_name, "ORANGE BUTTON ACTION")
+            app.mouse.take_orange_action()
 
         parser.register_regex(
             "^o$", orange_button_action, help_msg="click the orange button"
@@ -103,6 +105,7 @@ class RegexActions:
         def blue_button_action():
             print("Received blue button action")
             server.privmsg(channel_name, "BLUE BUTTON ACTION")
+            app.mouse.take_blue_action()
 
         parser.register_regex(
             "^b$", blue_button_action, help_msg="click the blue button"
@@ -115,6 +118,7 @@ class RegexActions:
         def nth_selection_action(n: int):
             print("Received nth selection action")
             server.privmsg(channel_name, "SELECT ELEMENT {} ACTION".format(n))
+            app.mouse.play_card(n, 7)
 
         parser.register_regex(
             "^([0-9])+$",

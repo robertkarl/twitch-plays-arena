@@ -38,13 +38,15 @@ def get_tpa_handler():
 class ArenaVoteCounter:
     """This class is responsible for tallying and interpreting votes."""
 
-    QUORUM_SIZE = 2
+    QUORUM_SIZE = 1
 
     def __init__(self):
         self._votes = defaultdict(int)
         self.reset_votes()
 
     def vote(self, vote: str) -> bool:
+        if self._votes is None:
+            return False
         self._votes[vote] += 1
 
     def tally_votes(self) -> str:
@@ -61,6 +63,10 @@ class ArenaVoteCounter:
 
     def is_tallying(self):
         return self._votes is not None
+
+    def done_tallying(self) -> bool:
+        # TODO add a timer here.
+        return self.check_quorum()
 
 
 class TpaEventHandler:
