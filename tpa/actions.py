@@ -112,89 +112,116 @@ class RegexActions:
         )
 
     @classmethod
-    def register_nth_selection_action(
+    def register_click_nth_card_in_hand_action(
         cls, parser: RegexActionParser, server, channel_name
     ):
-        def nth_selection_action(n: int):
-            print("Received nth selection action")
-            server.privmsg(channel_name, "SELECT ELEMENT {} ACTION".format(n))
-            app.mouse.play_card(n, 7)
+        def click_nth_card_in_hand_action(n: int):
+            print("Received click nth card in hand action")
+            server.privmsg(channel_name, "CLICK CARD {} IN HAND ACTION".format(n))
+            hand_size = app.mtga_app.mtga_watch_app.game.hero.hand.total_count
+            app.mouse.click_a_card(n, hand_size)
 
         parser.register_regex(
-            "^([0-9])+$",
-            nth_selection_action,
+            "^c([0-9])+$",
+            click_nth_card_in_hand_action,
             type_conversion_functions=[int],
-            help_msg="select the nth element",
+            help_msg="click the nth card in hand",
         )
 
     @classmethod
-    def register_block_action(
+    def register_play_nth_card_in_hand_action(
         cls, parser: RegexActionParser, server, channel_name
     ):
-        def block_action(*args):
-            print(args)
-            assert len(args) % 2 == 0  # Map from blockers to attackers.
-            blocker_spec = [int(a) for a in args]
-
-            blocker_string = "; ".join(
-                [
-                    "{} -> {}".format(a, b)
-                    for a, b in zip(blocker_spec[::2], blocker_spec[1::2])
-                ]
-            )
-            print("Received blocker action")
-            server.privmsg(channel_name, "BLOCK {}".format(blocker_string))
-
-        single_block_regex = r"([0-9]+):([0-9]+);"
-        blocker_regex = "^{sbr}+$".format(sbr=single_block_regex)
+        def play_nth_card_in_hand_action(n: int):
+            print("Received play nth card in hand action")
+            server.privmsg(channel_name, "PLAY CARD {} IN HAND ACTION".format(n))
+            hand_size = app.mtga_app.mtga_watch_app.game.hero.hand.total_count
+            app.mouse.play_card(n, hand_size)
 
         parser.register_regex(
-            blocker_regex, block_action, help_msg="specify blocker mapping"
+            "^p([0-9])+$",
+            play_nth_card_in_hand_action,
+            type_conversion_functions=[int],
+            help_msg="play the nth card in hand",
         )
 
     @classmethod
-    def register_attack_action(
+    def register_click_our_nth_creature_action(
         cls, parser: RegexActionParser, server, channel_name
     ):
-        def attack_action(*args):
-            assert len(args) % 2 == 0
-            print("Received attacker action")
-            server.privmsg(channel_name, "ATTACK {}".format(args))
-
-        single_attack_regex = r"([0-9]+):([a-zA-Z0-9_, ]+);"
-        attacker_regex = "^{sar}+$".format(sar=single_attack_regex)
+        def click_our_nth_creature_action(i: int, n: int):
+            print("Received click our nth creature action")
+            server.privmsg(channel_name, "CLICK OUR {}/{} CREATURE ACTION".format(i, n))
+            app.mouse.click_our_nth_creature(i, n)
 
         parser.register_regex(
-            attacker_regex, attack_action, help_msg="specify attacker mapping"
+            "^coc([0-9])+,([0-9])+$",
+            click_our_nth_creature_action,
+            type_conversion_functions=[int, int],
+            help_msg="click our nth creature",
         )
 
     @classmethod
-    def register_named_permanent_action(
-        cls, parser: RegexActionParser, server, channel_name
+    def register_click_their_nth_creature_action(
+        cls, parser:RegexActionParser, server, channel_name
     ):
-        def named_permanent_action(identifier):
-            print("Received named permanent action")
-            server.privmsg(
-                channel_name, "NAMED PERMANENT {}".format(identifier)
-            )
+        def click_their_nth_creature_action(i: int, n: int):
+            print("Received click their nth creature action")
+            server.privmsg(channel_name, "CLICK THEIR {}/{} CREATURE ACTION".format(i, n))
+            app.mouse.click_their_nth_creature(i, n)
 
         parser.register_regex(
-            "^([a-zA-Z0-9_, ]+:[0-9])+$",
-            named_permanent_action,
-            help_msg="select a permanent",
+            "^ctc([0-9])+,([0-9])+$",
+            click_their_nth_creature_action,
+            type_conversion_functions=[int],
+            help_msg="click their nth creature",
         )
 
     @classmethod
-    def register_player_action(
+    def register_click_player_action(
         cls, parser: RegexActionParser, server, channel_name
     ):
-        def player_action(identifier):
-            print("Received player action")
-            server.privmsg(channel_name, "PLAYER {}".format(identifier))
+        def click_player_action(identifier):
+            print("Received click player action")
+            server.privmsg(channel_name, "CLICK PLAYER {}".format(identifier))
+            app.mouse.click_player(identifier)
 
         parser.register_regex(
-            "^(you|me)$", player_action, help_msg="Select a player"
+            "^(you|me)$", click_player_action, help_msg="click a player"
         )
+
+    @classmethod
+    def register_accept_modal_action(
+        cls, parser: RegexActionParser, server, channel_name
+    ):
+        def accept_modal_action(i: int, n: int):
+            print("Received accept modal action")
+            server.privmsg(channel_name, "ACCEPT MODAL ACTION {} OF {}".format(i, n))
+            app.mouse.accept_modal_action(i, n)
+
+        parser.register_regex(
+            "^am([0-9])+,([0-9])+$",
+            accept_modal_action,
+            type_conversion_functions=[int, int],
+            help_msg="accept a modal action (such as shockland prompt)",
+        )
+
+    @classmethod
+    def register_choose_modal_action(
+        cls, parser: RegexActionParser, server, channel_name
+    ):
+        def choose_model_action(i: int, n: int):
+            print("Received choose modal action")
+            server.privmsg(channel_name, "CHOOSE MODAL ACTION {} OF {}".format(i, n))
+            app.mouse.choose_modal_action(i, n)
+
+        parser.register_regex(
+            "cm([0-9])+,([0-9])+$",
+            choose_model_action,
+            type_conversion_functions=[int, int],
+            help_msg="choose a modal action (such as a planeswalker ability)",
+        )
+
 
 
 def make_parser(server, channel_name):
@@ -202,10 +229,12 @@ def make_parser(server, channel_name):
 
     RegexActions.register_orange_button_action(parser, server, channel_name)
     RegexActions.register_blue_button_action(parser, server, channel_name)
-    RegexActions.register_nth_selection_action(parser, server, channel_name)
-    RegexActions.register_block_action(parser, server, channel_name)
-    RegexActions.register_attack_action(parser, server, channel_name)
-    RegexActions.register_named_permanent_action(parser, server, channel_name)
-    RegexActions.register_player_action(parser, server, channel_name)
+    RegexActions.register_click_nth_card_in_hand_action(parser, server, channel_name)
+    RegexActions.register_play_nth_card_in_hand_action(parser, server, channel_name)
+    RegexActions.register_click_our_nth_creature_action(parser, server, channel_name)
+    RegexActions.register_click_their_nth_creature_action(parser, server, channel_name)
+    RegexActions.register_click_player_action(parser, server, channel_name)
+    RegexActions.register_accept_modal_action(parser, server, channel_name)
+    RegexActions.register_choose_modal_action(parser, server, channel_name)
 
     return parser

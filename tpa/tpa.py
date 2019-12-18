@@ -50,7 +50,15 @@ class ArenaVoteCounter:
         self._votes[vote] += 1
 
     def tally_votes(self) -> str:
-        return Counter(self._votes).most_common(1)[0][0]
+        if self._votes is None:
+            return ""
+
+        result = Counter(self._votes).most_common(1)
+        if len(result) == 0:
+            return ""
+ 
+        # Get the first elements of the list, and the first element of the (vote, count) tuple.
+        return result[0][0]
 
     def start_counting(self) -> None:
         self._votes = defaultdict(int)
@@ -153,7 +161,11 @@ class TpaEventHandler:
     def choose_action(self) -> None:
         """Choose a vote action, and reset the votes counter."""
         action = self._votes.tally_votes()
-        self._parser.take_action(action, single_action=True)
+
+        if action == "":
+            self.server.privmsg(self._channel_name, "NO VOTES RECEIVED")
+        else:
+            self._parser.take_action(action, single_action=True)
         self._votes.reset_votes()
 
     def get_vote_counter(self):
