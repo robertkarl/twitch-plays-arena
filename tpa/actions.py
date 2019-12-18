@@ -116,6 +116,38 @@ class RegexActions:
         )
 
     @classmethod
+    def register_play_ith_of_n_cards_in_hand_action(
+        cls, parser: RegexActionParser, server, channel_name
+    ):
+        def play_ith_of_n_cards_in_hand_action(i: int, n: int):
+            print("Received play ith of n card in hand action")
+            server.privmsg(channel_name, "PLAY CARD {} of {} IN HAND ACTION".format(i, n))
+            app.mouse.play_a_card(i, n)
+
+        parser.register_regex(
+            "^p([0-9])+,([0-9])+$",
+            play_ith_of_n_cards_in_hand_action,
+            type_conversion_functions=[int, int],
+            help_msg="play the ith of n cards in hand",
+        )
+
+    @classmethod
+    def register_click_ith_of_n_cards_in_hand_action(
+        cls, parser: RegexActionParser, server, channel_name
+    ):
+        def click_ith_of_n_cards_in_hand_action(i: int, n: int):
+            print("Received click ith of n card in hand action")
+            server.privmsg(channel_name, "CLICK CARD {} of {} IN HAND ACTION".format(i, n))
+            app.mouse.click_a_card(i, n)
+
+        parser.register_regex(
+            "^c([0-9])+,([0-9])+$",
+            click_ith_of_n_cards_in_hand_action,
+            type_conversion_functions=[int, int],
+            help_msg="click the ith of n cards in hand",
+        )
+
+    @classmethod
     def register_click_nth_card_in_hand_action(
         cls, parser: RegexActionParser, server, channel_name
     ):
@@ -140,6 +172,8 @@ class RegexActions:
             print("Received play nth card in hand action")
             server.privmsg(channel_name, "PLAY CARD {} IN HAND ACTION".format(n))
             hand_size = app.mtga_app.mtga_watch_app.game.hero.hand.total_count
+            import logging
+            logging.warn('playing card {} of {} cards in hand.'.format(n, hand_size))
             app.mouse.play_card(n, hand_size)
 
         parser.register_regex(
@@ -234,7 +268,9 @@ def make_parser(server, channel_name):
     RegexActions.register_primary_button_action(parser, server, channel_name)
     RegexActions.register_upper_lower_button_action(parser, server, channel_name)
     RegexActions.register_click_nth_card_in_hand_action(parser, server, channel_name)
+    RegexActions.register_click_ith_of_n_cards_in_hand_action(parser, server, channel_name)
     RegexActions.register_play_nth_card_in_hand_action(parser, server, channel_name)
+    RegexActions.register_play_ith_of_n_cards_in_hand_action(parser, server, channel_name)
     RegexActions.register_click_our_nth_creature_action(parser, server, channel_name)
     RegexActions.register_click_their_nth_creature_action(parser, server, channel_name)
     RegexActions.register_click_player_action(parser, server, channel_name)
