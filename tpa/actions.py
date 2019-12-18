@@ -177,7 +177,7 @@ class RegexActions:
         parser.register_regex(
             "^ctc([0-9])+,([0-9])+$",
             click_their_nth_creature_action,
-            type_conversion_functions=[int],
+            type_conversion_functions=[int, int],
             help_msg="click their nth creature",
         )
 
