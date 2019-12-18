@@ -139,19 +139,21 @@ class TpaEventHandler:
     def on_chat_command(self, msg):
         print("received message {}".format(msg))
 
-        if msg == "p":
+        msg = msg.split(" ")[0]
+
+        if msg == "prompt":
             self.server.privmsg(self._channel_name, "Initiating Voting")
             self._votes = ArenaVoteCounter()
             return
 
-        if msg == "h":
+        if msg == "help":
             commands_msg = self._parser.get_help()
             commands_msg = commands_msg.replace("\n", "    ")
             commands_msg = commands_msg.replace("\t", "  ")
             self.server.privmsg(self._channel_name, commands_msg)
             return
 
-        if msg == "x":
+        if msg == "execute":
             self.choose_action()
             return
 

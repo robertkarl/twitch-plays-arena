@@ -86,29 +86,33 @@ class RegexActions:
     """
 
     @classmethod
-    def register_orange_button_action(
+    def register_primary_button_action(
         cls, parser: RegexActionParser, server, channel_name
     ):
-        def orange_button_action():
-            print("Received orange button action")
-            server.privmsg(channel_name, "ORANGE BUTTON ACTION")
-            app.mouse.take_orange_action()
+        def primary_button_action():
+            print("Received primary button action")
+            server.privmsg(channel_name, "PRIMARY BUTTON ACTION")
+            # The primary button is in the lower position.
+            app.mouse.take_lower_action()
 
         parser.register_regex(
-            "^o$", orange_button_action, help_msg="click the orange button"
+            "^p$", primary_button_action, help_msg="click the primary (single) button"
         )
 
     @classmethod
-    def register_blue_button_action(
+    def register_upper_lower_button_action(
         cls, parser: RegexActionParser, server, channel_name
     ):
-        def blue_button_action():
-            print("Received blue button action")
-            server.privmsg(channel_name, "BLUE BUTTON ACTION")
-            app.mouse.take_blue_action()
+        def upper_lower_button_action(tag):
+            print("Received upper/lower button action")
+            server.privmsg(channel_name, "UPPER/LOWER BUTTON ACTION")
+            if tag == 'u':
+                app.mouse.take_upper_action()
+            elif tag == 'l':
+                app.mouse.take_lower_action()
 
         parser.register_regex(
-            "^b$", blue_button_action, help_msg="click the blue button"
+            "^(u|l)$", upper_lower_button_action, help_msg="click the upper or lower of two buttons"
         )
 
     @classmethod
@@ -227,8 +231,8 @@ class RegexActions:
 def make_parser(server, channel_name):
     parser = RegexActionParser()
 
-    RegexActions.register_orange_button_action(parser, server, channel_name)
-    RegexActions.register_blue_button_action(parser, server, channel_name)
+    RegexActions.register_primary_button_action(parser, server, channel_name)
+    RegexActions.register_upper_lower_button_action(parser, server, channel_name)
     RegexActions.register_click_nth_card_in_hand_action(parser, server, channel_name)
     RegexActions.register_play_nth_card_in_hand_action(parser, server, channel_name)
     RegexActions.register_click_our_nth_creature_action(parser, server, channel_name)
