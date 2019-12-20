@@ -147,10 +147,19 @@ class TpaEventHandler:
             return
 
         if msg == "help":
-            commands_msg = self._parser.get_help()
-            commands_msg = commands_msg.replace("\n", "    ")
-            commands_msg = commands_msg.replace("\t", "  ")
-            self.server.privmsg(self._channel_name, commands_msg)
+            if False:
+                commands_msg = self._parser.get_help()
+                commands_msg = commands_msg.replace("\n", "    ")
+                commands_msg = commands_msg.replace("\t", "  ")
+                self.server.privmsg(self._channel_name, commands_msg)
+            else:
+                commands_msg = self._parser.get_help()
+                commands_msg_list = commands_msg.split("\n")
+                import time
+                for elem in commands_msg_list:
+                    self.server.privmsg(self._channel_name, elem)
+                    time.sleep(0.5)
+
             return
 
         if msg == "execute":

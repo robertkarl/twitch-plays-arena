@@ -122,7 +122,7 @@ class RegexActions:
         def play_ith_of_n_cards_in_hand_action(i: int, n: int):
             print("Received play ith of n card in hand action")
             server.privmsg(channel_name, "PLAY CARD {} of {} IN HAND ACTION".format(i, n))
-            app.mouse.play_a_card(i, n)
+            app.mouse.play_card(i, n)
 
         parser.register_regex(
             "^p([0-9])+,([0-9])+$",
