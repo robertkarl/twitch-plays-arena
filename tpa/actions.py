@@ -254,10 +254,27 @@ class RegexActions:
             app.mouse.choose_modal_action(i, n)
 
         parser.register_regex(
-            "cm([0-9])+,([0-9])+$",
+            "^cm([0-9])+,([0-9])+$",
             choose_model_action,
             type_conversion_functions=[int, int],
             help_msg="choose a modal action (such as a planeswalker ability)",
+        )
+
+    @classmethod
+    def register_choose_click_action(
+        cls, parser:RegexActionParser, server, channel_name
+    ):
+        def choose_click_action(x: int, y: int):
+            # TODO we may need to convert from floats to pixel coordinates on the screen.
+            print("Received choose click action, at coordinates ({}, {})".format(x, y))
+            server.privmsg(channel_name, "CHOOSE CLICK ACTION AT ({}, {})".format(x, y))
+            app.mouse.click(x, y)
+
+        parser.register_regex(
+            "^CLICK ([0-9])+,([0-9])+$",
+            choose_click_action,
+            type_conversion_functions=[int, int],
+            help_msg="click at pixels (x, y)",
         )
 
 
@@ -276,5 +293,6 @@ def make_parser(server, channel_name):
     RegexActions.register_click_player_action(parser, server, channel_name)
     RegexActions.register_accept_modal_action(parser, server, channel_name)
     RegexActions.register_choose_modal_action(parser, server, channel_name)
+    RegexActions.register_choose_click_action(parser, server, channel_name)
 
     return parser

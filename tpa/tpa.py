@@ -10,6 +10,8 @@ import re
 import pathlib
 import threading
 import logging
+import sklearn.cluster
+import scipy
 logging.basicConfig(level=logging.WARN)
 
 """
@@ -41,33 +43,47 @@ class ArenaVoteCounter:
     QUORUM_SIZE = 1
 
     def __init__(self):
-        self._votes = defaultdict(int)
+        self._votes = []
         self.reset_votes()
 
     def vote(self, vote: str) -> bool:
-        if self._votes is None:
-            return False
-        self._votes[vote] += 1
+        # Vote must be a string of the form "CLICK x,y"
+        assert vote.startswith("CLICK ")
+        x_comma_y = vote.split()[1]
+        x, y = x_comma_y.split(",")
+        print("Got x={}, y={}".format(x, y))
+
+        self._votes.append([int(x), int(y)])
 
     def tally_votes(self) -> str:
         if self._votes is None:
             return ""
 
-        result = Counter(self._votes).most_common(1)
-        if len(result) == 0:
-            return ""
- 
-        # Get the first elements of the list, and the first element of the (vote, count) tuple.
-        return result[0][0]
+        if len(self._votes) == 0:
+            return "CLICK 0,0"
+
+        # Do k-means clustering with 5 means, then choose an element from the most popular cluster.
+        print("Tallying votes by clustering")
+        kmeans = sklearn.cluster.KMeans(n_clusters=min(5, len(self._votes)))
+        kmeans.fit(self._votes)
+
+        # Find the largest cluster by label.
+        mode = scipy.stats.mode(kmeans.labels_)[0][0]
+        # Get the position of that cluster.
+        center = kmeans.cluster_centers_[mode]
+
+        x, y = int(center[0]), int(center[1])
+
+        return "CLICK {},{}".format(x,y)
 
     def start_counting(self) -> None:
-        self._votes = defaultdict(int)
+        self._votes = []
 
     def reset_votes(self) -> None:
-        self._votes = None
+        self._votes = [] # TODO might want to change this
 
     def check_quorum(self) -> bool:
-        return sum(self._votes.values()) >= self.QUORUM_SIZE
+        return len(self._votes) >= self.QUORUM_SIZE
 
     def is_tallying(self):
         return self._votes is not None
@@ -89,6 +105,7 @@ class TpaEventHandler:
         self._has_requested_perms = False
         self._channel_name = channel_to_join
         self._votes = ArenaVoteCounter()
+        self._votes.start_counting() # TODO probably should remove this.
         self._parser = actions.make_parser(server, self._channel_name)
 
     def on_welcome(self, connection, event):
@@ -139,27 +156,13 @@ class TpaEventHandler:
     def on_chat_command(self, msg):
         print("received message {}".format(msg))
 
-        msg = msg.split(" ")[0]
-
         if msg == "prompt":
             self.server.privmsg(self._channel_name, "Initiating Voting")
             self._votes = ArenaVoteCounter()
             return
 
         if msg == "help":
-            if False:
-                commands_msg = self._parser.get_help()
-                commands_msg = commands_msg.replace("\n", "    ")
-                commands_msg = commands_msg.replace("\t", "  ")
-                self.server.privmsg(self._channel_name, commands_msg)
-            else:
-                commands_msg = self._parser.get_help()
-                commands_msg_list = commands_msg.split("\n")
-                import time
-                for elem in commands_msg_list:
-                    self.server.privmsg(self._channel_name, elem)
-                    time.sleep(0.5)
-
+            self.server.privmsg(self._channel_name, "Click the overlay to vote on an action.")
             return
 
         if msg == "execute":
