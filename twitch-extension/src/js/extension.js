@@ -15,8 +15,16 @@
  */
 
 var twitch = window.Twitch ? window.Twitch.ext : null;
-console.log('front end is here');
-twitch.rig.log('front end is here');
+var doshit = $('#justabutton');
+twitch.rig.log('hello rig');
+doshit.click(function() {
+  twitch.rig.log('button click received');
+  // TODO: post coords of click.
+});
+
+function post_some_shit() {
+
+
 
 (function () {
 
@@ -38,19 +46,5 @@ twitch.rig.log('front end is here');
     // Reference: https://dev.twitch.tv/docs/extensions/reference/#listen
     twitch.listen('broadcast', function (_target, _contentType, message) {
         log("listen() fired, PubSub message received, giveawayInProgress: " + message);
-
-        var giveawayInProgress = (message == 'true');
-
-        elem = document.getElementById("txt");
-        if (giveawayInProgress == true) {
-            elem.classList.remove("is-warning");
-            elem.classList.add("is-success");
-            elem.innerHTML = "Congratulations! Your unique key is " + tuid;
-        }
-        else {
-            elem.classList.remove("is-success");
-            elem.classList.add("is-warning");
-            elem.innerHTML = "No active giveaways. Check back later!";
-        }
     });
 })()
