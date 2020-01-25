@@ -9,6 +9,7 @@
 https://dev.twitch.tv/docs/pubsub#connection-management
 https://dev.twitch.tv/docs/tutorials/extension-101-tutorial-series/file-structure
 https://dev.twitch.tv/docs/tutorials/extension-101-tutorial-series/jwt
+https://dev.twitch.tv/docs/extensions/reference/#send-extension-pubsub-message
 
 
 
