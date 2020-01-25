@@ -23,7 +23,7 @@ def vote():
         try:
             x, y = q.get(block=False)
         except queue.Empty:
-            return ""
+            return "empty"
         return "{}, {}".format(x, y)
     else:
         if not flask.request.method == 'POST':
