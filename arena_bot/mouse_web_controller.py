@@ -107,7 +107,7 @@ def main_loop(url, loop_sleep, quorum_size):
             logging.info("Processing votes")
             highest_vote = vote_counter.tally_vote()
             logging.info("Chose coordinates: {}".format(highest_vote))
-            mouse.click(*highest_vote)
+            click(*highest_vote)
             vote_counter.reset()
 
         time.sleep(loop_sleep)
