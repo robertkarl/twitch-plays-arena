@@ -15,16 +15,34 @@
  */
 
 var twitch = window.Twitch ? window.Twitch.ext : null;
-var doshit = $('#justabutton');
+var body = $('#body');
 twitch.rig.log('hello rig');
-doshit.click(function() {
+body.click(function(e) {
   twitch.rig.log('button click received');
-  // TODO: post coords of click.
+  var x = e.pageX;
+  var y = e.pageY;
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  var s = x + ', ' + y;
+  var viewport = width + ', ' + height;
+  twitch.rig.log(s);
+  twitch.rig.log('viewport is ' + viewport);
+  $('#txt').html('voted for ' + s);
+  var params = $.param({
+    x: x,
+    y: y,
+    width: width,
+    height: height,
+    id: window.tuid
+  });
+
+  $.post('http://localhost:5000/vote?' + params,
+      function() {
+          $('#txt').html(s);
+          twitch.rig.log('post succeeded');
+      }
+  );
 });
-
-function post_some_shit() {
-
-
 
 (function () {
 
@@ -38,13 +56,9 @@ function post_some_shit() {
     // We will not use the JWT here, as we need a JWT from the broadcaster instead of the viewer.
     // Reference: https://dev.twitch.tv/docs/extensions/reference/#onauthorized
     twitch.onAuthorized(function (auth) {
-        tuid = auth.userId
+        tuid = auth.userId;
+        window.tuid = tuid;
         log("onAuhorized() fired\nUser " + tuid + " started extension");
     });
 
-    // Listen for an incoming PubSub message and adjust HTML elements accordingly
-    // Reference: https://dev.twitch.tv/docs/extensions/reference/#listen
-    twitch.listen('broadcast', function (_target, _contentType, message) {
-        log("listen() fired, PubSub message received, giveawayInProgress: " + message);
-    });
 })()
