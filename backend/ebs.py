@@ -20,7 +20,7 @@ app = flask.Flask(__name__)
 q = queue.Queue()
 
 rl = collections.defaultdict(lambda: datetime.datetime(2000, 1, 1))
-MIN_INTERVAL = datetime.timedelta(seconds=3)
+MIN_INTERVAL = datetime.timedelta(seconds=1)
 
 
 def empty_queue():
