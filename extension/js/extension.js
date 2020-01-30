@@ -15,16 +15,20 @@
  */
 
 var twitch = window.Twitch ? window.Twitch.ext : null;
-var doshit = $('#justabutton');
+var body = $('#body');
 twitch.rig.log('hello rig');
-doshit.click(function() {
+body.click(function(e) {
   twitch.rig.log('button click received');
-  // TODO: post coords of click.
+  var x = e.pageX;
+  var y = e.pageY;
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  var s = x + ', ' + y;
+  var viewport = width + ', ' + height;
+  twitch.rig.log(s);
+  twitch.rig.log('viewport is ' + viewport);
+  $('#txt').html(s)
 });
-
-function post_some_shit() {
-
-
 
 (function () {
 
@@ -42,9 +46,4 @@ function post_some_shit() {
         log("onAuhorized() fired\nUser " + tuid + " started extension");
     });
 
-    // Listen for an incoming PubSub message and adjust HTML elements accordingly
-    // Reference: https://dev.twitch.tv/docs/extensions/reference/#listen
-    twitch.listen('broadcast', function (_target, _contentType, message) {
-        log("listen() fired, PubSub message received, giveawayInProgress: " + message);
-    });
 })()
