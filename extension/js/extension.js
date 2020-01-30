@@ -36,7 +36,7 @@ body.click(function(e) {
     id: window.tuid
   });
 
-  $.post('http://localhost:5000/vote?' + params,
+  $.post('http://192.168.0.18:5000/vote?' + params,
       function() {
           $('#txt').html(s);
           twitch.rig.log('post succeeded');

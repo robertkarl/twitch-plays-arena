@@ -82,18 +82,33 @@ def parse_args(argv):
 def get_info_over_http(url):
     """Sends an HTTP request to the given url, and tries to extract votes.
 
+    NOTE: The votes should be in [0, 1] floating point coordinates when received.
+    They will be adjusted to screen pixel size coordinates.
+
     Arguments:
         url: an endpoint to query.
     
     Returns:
-        a list [[x1, y1], [x2, y2], ...] of votes.
+        a list [[x1, y1], [x2, y2], ...] of votes. The votes should be in screen pixel coordinates.
     """
     logging.info("Sending HTTP Request to {}".format(url))
-    data = requests.get(url)
+    try:
+        data = requests.get(url)
+    except Exception as e:
+        logging.info("Ignoring Exception: {}".format(str(e)))
+        return []
     if data.status_code == requests.codes.ok:
-        return data.json()
+        data = data.json()
+
+        # @data contains [0, 1] coordinates. Normalize to screen coordinates.
+        user32 = ctypes.windll.user32
+        screen_x, screen_y = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+
+        data = [[int(x * screen_x), int(y * screen_y)] for x, y in data]
+        return data
+
     else:
-        print("error: received http code {!r}, in message: {}".format(data.status_code, data))
+        logging.info("Error: received http code {!r}, in message: {}".format(data.status_code, data))
         return []
 
 def main_loop(url, loop_sleep, quorum_size):

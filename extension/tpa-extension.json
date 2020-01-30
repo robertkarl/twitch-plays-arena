@@ -99,7 +99,7 @@
     "whitelistedPanelUrls": []
   },
   "frontendCommand": "",
-  "frontendFolderName": "/home/rk/code/twitch-arenabot/twitch-plays-arena/twitch-extension/src",
+  "frontendFolderName": "C:\\Users\\mchorton\\Documents\\twitch-plays-arena\\extension",
   "name": "send-message-from-chat-demo",
   "version": 1
 }
