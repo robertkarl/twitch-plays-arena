@@ -20,7 +20,7 @@ app = flask.Flask(__name__)
 q = queue.Queue()
 
 rl = collections.defaultdict(lambda: datetime.datetime(2000, 1, 1))
-MIN_INTERVAL = datetime.timedelta(seconds=3)
+MIN_INTERVAL = datetime.timedelta(seconds=1)
 
 
 def empty_queue():
@@ -48,8 +48,12 @@ def vote():
         last = rl[uid]
         if now - last < MIN_INTERVAL:
             return ("NOPE", 500)
-        coordx = int(flask.request.values["x"])
-        coordy = int(flask.request.values["y"])
+        x = int(flask.request.values["x"])
+        y = int(flask.request.values["y"])
+        width = int(flask.request.values["width"])
+        height = int(flask.request.values["height"])
+        coordx = x / width
+        coordy = y / height
         rl[uid] = now
         q.put((coordx, coordy))
         return ("OK", 200)
