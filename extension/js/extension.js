@@ -27,7 +27,21 @@ body.click(function(e) {
   var viewport = width + ', ' + height;
   twitch.rig.log(s);
   twitch.rig.log('viewport is ' + viewport);
-  $('#txt').html(s)
+  $('#txt').html('voted for ' + s);
+  var params = $.param({
+    x: x,
+    y: y,
+    width: width,
+    height: height,
+    id: window.tuid
+  });
+
+  $.post('http://localhost:5000/vote?' + params,
+      function() {
+          $('#txt').html(s);
+          twitch.rig.log('post succeeded');
+      }
+  );
 });
 
 (function () {
@@ -42,7 +56,8 @@ body.click(function(e) {
     // We will not use the JWT here, as we need a JWT from the broadcaster instead of the viewer.
     // Reference: https://dev.twitch.tv/docs/extensions/reference/#onauthorized
     twitch.onAuthorized(function (auth) {
-        tuid = auth.userId
+        tuid = auth.userId;
+        window.tuid = tuid;
         log("onAuhorized() fired\nUser " + tuid + " started extension");
     });
 
