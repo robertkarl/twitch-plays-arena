@@ -3,9 +3,8 @@
 #### Use virtualenv
 ```
 virtualenv -p python3 venv
-. venv/bin/activate
-pip install irc
-make run
+venv/Scripts/activate
+pip install -r requirements.txt
 ```
 
 #### Set up the twitch bot

@@ -89,8 +89,12 @@ def get_info_over_http(url):
         a list [[x1, y1], [x2, y2], ...] of votes.
     """
     logging.info("Sending HTTP Request to {}".format(url))
-    data = requests.get(url).json()
-    return data
+    data = requests.get(url)
+    if data.status_code == requests.codes.ok:
+        return data.json()
+    else:
+        print("error: received http code {!r}, in message: {}".format(data.status_code, data))
+        return []
 
 def main_loop(url, loop_sleep, quorum_size):
     vote_counter = ArenaVoteCounter(quorum_size)

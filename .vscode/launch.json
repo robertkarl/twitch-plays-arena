@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "mouse_web_controller",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "program": "${workspaceFolder}/arena_bot/mouse_web_controller.py",
+            "env": {"PYTHONUNBUFFERED": "TRUE", "PYTHONPATH": "${workspaceFolder}\\twitch-plays-arena\\tpa"},
+            "args": [
+                "--url",
+                "http://192.168.0.18:5000/vote",
+                "--loop_sleep",
+                "0.5",
+                "--quorum_size",
+                "10",
+            ]
+        }
+    ]
+}
